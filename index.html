@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obserra.fun — Discover Hidden Japanese Creators</title>
+
+<style>
+body {
+  margin:0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color:white;
+}
+
+header {
+  text-align:center;
+  padding:40px 20px;
+}
+
+h1 { font-size:34px; }
+.tagline { color:#94a3b8; }
+
+.container {
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+
+.controls {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+
+input, select {
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  background:#1e293b;
+  color:white;
+}
+
+button {
+  padding:10px 15px;
+  border:none;
+  border-radius:8px;
+  background:#38bdf8;
+  cursor:pointer;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+  gap:20px;
+}
+
+.card {
+  background:rgba(30,41,59,0.7);
+  backdrop-filter: blur(10px);
+  padding:15px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.card:hover {
+  transform:translateY(-5px);
+  background:#334155;
+}
+
+.avatar {
+  width:100%;
+  height:150px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+.tag {
+  font-size:12px;
+  color:#38bdf8;
+}
+
+.modal {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+.modal-content {
+  background:#020617;
+  padding:25px;
+  border-radius:12px;
+  max-width:400px;
+}
+
+.close {
+  float:right;
+  cursor:pointer;
+}
+
+a { color:#38bdf8; text-decoration:none; }
+
+footer {
+  text-align:center;
+  padding:20px;
+  color:#64748b;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Obserra.fun</h1>
+  <p class="tagline">Discover Hidden Japanese Creators</p>
+</header>
+
+<div class="container">
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search...">
+    <select id="filter">
+      <option value="all">All</option>
+      <option value="vtuber">VTuber</option>
+      <option value="artist">Artist</option>
+    </select>
+    <button onclick="randomPick()">🎲 Random</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">❌</span>
+    <h2 id="modalName"></h2>
+    <p id="modalDesc"></p>
+    <p id="modalTags"></p>
+    <a id="modalLink" target="_blank">Visit Creator</a><br><br>
+    <button onclick="copyLink()">🔗 Copy Page Link</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 Obserra.fun</p>
+</footer>
+
+<script>
+const creators = [
+{
+name:"Aoi Hikari",
+type:"vtuber",
+desc:"Cozy late-night VTuber streams.",
+tags:["cozy","chatting"],
+avatar:"https://picsum.photos/400/200?1",
+link:"https://youtube.com/"
+},
+{
+name:"Sakura Nemu",
+type:"vtuber",
+desc:"Soft voice relaxing streams.",
+tags:["relax","asmr"],
+avatar:"https://picsum.photos/400/200?2",
+link:"https://youtube.com/"
+},
+{
+name:"Kitsune Art",
+type:"artist",
+desc:"Fox-themed anime illustrator.",
+tags:["cute","commission"],
+avatar:"https://picsum.photos/400/200?3",
+link:"https://www.pixiv.net/"
+},
+{
+name:"Mori Sketch",
+type:"artist",
+desc:"Fantasy anime character artist.",
+tags:["fantasy","detailed"],
+avatar:"https://picsum.photos/400/200?4",
+link:"https://www.pixiv.net/"
+},
+{
+name:"Hoshi Yume",
+type:"vtuber",
+desc:"Dreamy aesthetic VTuber.",
+tags:["aesthetic"],
+avatar:"https://picsum.photos/400/200?5",
+link:"https://youtube.com/"
+},
+{
+name:"Neko Canvas",
+type:"artist",
+desc:"Cat-style avatar artist.",
+tags:["avatar","cute"],
+avatar:"https://picsum.photos/400/200?6",
+link:"https://www.pixiv.net/"
+},
+{
+name:"RinLive",
+type:"vtuber",
+desc:"Interactive small VTuber.",
+tags:["interactive"],
+avatar:"https://picsum.photos/400/200?7",
+link:"https://youtube.com/"
+},
+{
+name:"Kumo Ink",
+type:"artist",
+desc:"Dark anime illustrator.",
+tags:["dark"],
+avatar:"https://picsum.photos/400/200?8",
+link:"https://www.pixiv.net/"
+}
+];
+
+let currentLink = "";
+
+function render(data){
+  const grid = document.getElementById("grid");
+  grid.innerHTML="";
+  data.forEach(c=>{
+    grid.innerHTML += `
+    <div class="card" onclick="openModal('${c.name}')">
+      <img src="${c.avatar}" class="avatar">
+      <h3>${c.name}</h3>
+      <p>${c.type}</p>
+      <p class="tag">${c.tags.join(", ")}</p>
+    </div>`;
+  });
+}
+
+function filter(){
+  const s = document.getElementById("search").value.toLowerCase();
+  const f = document.getElementById("filter").value;
+
+  const res = creators.filter(c =>
+    (f==="all"||c.type===f) &&
+    (c.name.toLowerCase().includes(s) || c.tags.join().includes(s))
+  );
+
+  render(res);
+}
+
+function openModal(name){
+  const c = creators.find(x=>x.name===name);
+  document.getElementById("modalName").innerText=c.name;
+  document.getElementById("modalDesc").innerText=c.desc;
+  document.getElementById("modalTags").innerText="Tags: "+c.tags.join(", ");
+  document.getElementById("modalLink").href=c.link;
+  currentLink = c.link;
+  document.getElementById("modal").style.display="flex";
+}
+
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+function randomPick(){
+  const r = creators[Math.floor(Math.random()*creators.length)];
+  openModal(r.name);
+}
+
+function copyLink(){
+  navigator.clipboard.writeText(currentLink);
+  alert("Link copied!");
+}
+
+document.getElementById("search").addEventListener("input", filter);
+document.getElementById("filter").addEventListener("change", filter);
+
+render(creators);
+</script>
+
+</body>
+</html>
